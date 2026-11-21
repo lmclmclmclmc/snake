@@ -12,12 +12,13 @@ import javafx.scene.text.Font;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 
-import java.awt.*;
+import java.awt.Point;
+import java.util.Arrays;
 
 public class GameView {
 
     public Canvas gridCanvas;
-    public GraphicsContext gc;
+    private GraphicsContext gc;
 
     public Label gameOverLabel;
     public Label gameWonLabel;
@@ -25,24 +26,25 @@ public class GameView {
     private boolean gameOverVis = false;
     private boolean gameWonVis = false;
 
-    private Game game;
+    private final Game game;
     private double initX;
     private double initY;
     private double fullScale = 1;
     private boolean fullsize = false;
-    private int[][] turnArray = new int[MainMenuController.getxValue()][MainMenuController.getyValue()];
+    private final int[][] turnArray;
 
     public GameView(Game game) {
         this.game = game;
+        this.turnArray = new int[game.getWidth()][game.getHeight()];
     }
 
-    public void makeScene(Scene scene, Snake snek, Coin coin) {
+    public void makeScene(Scene scene, Snake snek, Coin coin, Obstacle obstacle) {
         Scene gameScene = scene;
         gridCanvas = new Canvas(gameScene.getWidth(), gameScene.getHeight());
         initX = scene.getWidth();
         initY = scene.getHeight();
         gc = gridCanvas.getGraphicsContext2D();
-        drawGrid(coin, snek, gc);
+        drawGrid(coin, snek, obstacle);
 
         gameOverLabel = new Label("GAME OVER");
         gameOverLabel.setId("gameOverLabel");
@@ -86,10 +88,10 @@ public class GameView {
 
         gameOverLabel.setFont(new Font("Arial", 25 * fullScale));
         gameWonLabel.setFont(new Font("Arial", 25 * fullScale));
-        drawGrid(coin, snek, obstacle, gc, false, 0);
+        drawGrid(coin, snek, obstacle);
     }
 
-    public void drawGrid(Coin coin, Snake snek, Obstacle obstacle, GraphicsContext gc, boolean a, int b) {
+    public void drawGrid(Coin coin, Snake snek, Obstacle obstacle) {
         gc.setFill(game.getColor());
         gc.fillRect(0, 0, gridCanvas.getWidth(), gridCanvas.getHeight());
 
@@ -107,21 +109,6 @@ public class GameView {
         for (Point point : obstacle.getObstacles()) {
             gc.fillRect(point.x * game.getMultiplier() * fullScale, point.y * game.getMultiplier() * fullScale, game.getMultiplier() * fullScale, game.getMultiplier() * fullScale);
         }
-    }
-
-    private void drawGrid(Coin coin, Snake snek, GraphicsContext gc) {
-        gc.setFill(game.getColor());
-        gc.fillRect(0, 0, gridCanvas.getWidth(), gridCanvas.getHeight());
-
-        gc.drawImage(coin.getImage(), (coin.getPos().x * game.getMultiplier()) * fullScale, (coin.getPos().y * game.getMultiplier()) * fullScale, game.getMultiplier() * fullScale - 3 * fullScale, game.getMultiplier() * fullScale - 3 * fullScale);
-
-        int bodyIndex = 0;
-        for (Point point : snek.getBody()) {
-            drawBody(snek, point, bodyIndex);
-            bodyIndex++;
-        }
-
-        drawHead(snek);
     }
 
     private void drawHead(Snake snek) {
@@ -173,16 +160,21 @@ public class GameView {
         gc.drawImage(rotatedImage, (point.x * game.getMultiplier()) * fullScale, (point.y * game.getMultiplier()) * fullScale, game.getMultiplier() * fullScale * fullScale, game.getMultiplier() * fullScale * fullScale);
     }
 
-    public void turnDir(Snake snek) {
-        if ((GameController.lastKey == KeyCode.LEFT && GameController.key == KeyCode.UP) || (GameController.lastKey == KeyCode.DOWN && GameController.key == KeyCode.RIGHT)) {
-            turnArray[(int) snek.getHead().getX()][(int) snek.getHead().getY()] = 2;
-        } else if ((GameController.lastKey == KeyCode.LEFT && GameController.key == KeyCode.DOWN) || (GameController.lastKey == KeyCode.UP && GameController.key == KeyCode.RIGHT)) {
-            turnArray[(int) snek.getHead().getX()][(int) snek.getHead().getY()] = 3;
-        } else if ((GameController.lastKey == KeyCode.RIGHT && GameController.key == KeyCode.UP) || (GameController.lastKey == KeyCode.DOWN && GameController.key == KeyCode.LEFT)) {
-            turnArray[(int) snek.getHead().getX()][(int) snek.getHead().getY()] = 1;
-        } else if ((GameController.lastKey == KeyCode.UP && GameController.key == KeyCode.LEFT) || (GameController.lastKey == KeyCode.RIGHT && GameController.key == KeyCode.DOWN)) {
-            turnArray[(int) snek.getHead().getX()][(int) snek.getHead().getY()] = 4;
-        } else turnArray[(int) snek.getHead().getX()][(int) snek.getHead().getY()] = 0;
+    public void recordTurn(Point head, KeyCode previous, KeyCode direction) {
+        turnArray[head.x][head.y] = switch (previous) {
+            case LEFT -> direction == KeyCode.UP ? 2 : 3;
+            case DOWN -> direction == KeyCode.RIGHT ? 2 : 1;
+            case RIGHT -> direction == KeyCode.UP ? 1 : 4;
+            case UP -> direction == KeyCode.RIGHT ? 3 : 4;
+            default -> throw new IllegalArgumentException("Expected an arrow direction");
+        };
+    }
+
+    /** Clears sprite turn markers from the previous run. */
+    public void clearTurns() {
+        for (int[] column : turnArray) {
+            Arrays.fill(column, 0);
+        }
     }
 
     public void gameOver(Snake snek) {

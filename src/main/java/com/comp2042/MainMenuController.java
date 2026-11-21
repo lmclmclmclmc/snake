@@ -15,7 +15,7 @@ public class MainMenuController {
 
     private Scene gameScene;
 
-    private ViewManager viewManager = Main.getViewManager();
+    private final ViewManager viewManager = Main.getViewManager();
 
     public void handleStart() {
         viewManager.initGameStage();
@@ -23,8 +23,8 @@ public class MainMenuController {
         Stage gameStage = viewManager.getGameStage();
         launchSnake(gameStage);
         gameStage.setScene(gameScene);
-        viewManager.getPrimaryStage().close();
         gameStage.show();
+        viewManager.getPrimaryStage().hide();
     }
 
     private void launchSnake(Stage gameStage) {
@@ -34,14 +34,18 @@ public class MainMenuController {
         Coin coin = new Coin(game.getWidth(), game.getHeight(), snek, obstacle);
 
         GameView gameView = new GameView(game);
-        GameController controller = new GameController(snek, coin, game, gameView, obstacle, gameStage);
+        GameController controller = new GameController(snek, coin, game, gameView, obstacle, gameStage, () -> {
+            viewManager.getPrimaryStage().show();
+            gameStage.close();
+        });
+        gameStage.setOnHidden(event -> controller.stop());
 
         StackPane gamePane = new StackPane();
         gameScene = new Scene(gamePane, game.getWidth() * game.getMultiplier(), game.getHeight() * game.getMultiplier());
 
         gameScene.setOnKeyPressed(controller::handle);
 
-        gameView.makeScene(gameScene, snek, coin);
+        gameView.makeScene(gameScene, snek, coin, obstacle);
         gamePane.getChildren().addAll(gameView.gridCanvas, gameView.gameOverLabel, gameView.gameWonLabel, gameView.scoreLabel);
         gamePane.setPadding(new Insets(20));
         gamePane.setAlignment(gameView.gameOverLabel, Pos.TOP_CENTER);
@@ -49,15 +53,4 @@ public class MainMenuController {
         gamePane.setAlignment(gameView.scoreLabel, Pos.BOTTOM_CENTER);
     }
 
-    public ViewManager getViewManager() {
-        return viewManager;
-    }
-
-    public static int getxValue() {
-        return X_VALUE;
-    }
-
-    public static int getyValue() {
-        return Y_VALUE;
-    }
 }

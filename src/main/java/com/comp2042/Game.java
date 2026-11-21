@@ -45,8 +45,13 @@ public class Game {
         score++;
     }
 
-    public void decMaxScore(int num) {
-        this.maxScore -= (num - 1);
+    /**
+     * Sets the number of coins needed to fill the board with the current obstacles.
+     *
+     * @param count number of cells occupied by obstacles
+     */
+    public void setObstacleCount(int count) {
+        maxScore = width * height - 2 - count;
     }
 
     public int getWidth() {
@@ -60,6 +65,7 @@ public class Game {
     public void resetScore() {
         score = 0;
         scorePoints = 0;
+        setObstacleCount(0);
     }
 
     public Color getColor() {

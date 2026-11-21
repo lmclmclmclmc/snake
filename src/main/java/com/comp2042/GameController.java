@@ -13,124 +13,133 @@ import java.util.Random;
 public class GameController {
     private Snake snek;
     private Coin coin;
-    private GameView gameView;
-    private Game game;
-    private Stage stage;
-    private Obstacle obstacle;
-    private final CoinFactory coinFactory;
+    private final GameView gameView;
+    private final Game game;
+    private final Stage stage;
+    private final Obstacle obstacle;
+    private final Runnable returnToMenu;
+    private final CoinFactory coinFactory = new CoinFactory();
+    private final Steering steering = new Steering();
+    private final Timeline animation = new Timeline(
+            new KeyFrame(Duration.seconds(1), event -> tick()));
 
-    public static KeyCode key = KeyCode.LEFT;
-    public static KeyCode lastKey = KeyCode.LEFT;
-    private boolean keyPressed = false;
-
-    public GameController(Snake snek, Coin coin, Game game, GameView gameView, Obstacle obstacle, Stage stage) {
+    public GameController(Snake snek, Coin coin, Game game, GameView gameView,
+                          Obstacle obstacle, Stage stage, Runnable returnToMenu) {
         this.snek = snek;
         this.coin = coin;
         this.gameView = gameView;
         this.game = game;
         this.stage = stage;
         this.obstacle = obstacle;
-        this.coinFactory = new CoinFactory();
+        this.returnToMenu = returnToMenu;
         animation.setCycleCount(Animation.INDEFINITE);
         animation.setRate(game.getSpeed());
     }
 
-    private final Timeline animation = new Timeline(new KeyFrame(Duration.seconds(1), event -> {
-        if (snek.getDead()) {
+    private void tick() {
+        if (hasEnded()) {
+            stop();
             return;
-        } else {
+        }
 
-            if (key.equals(KeyCode.LEFT)) {
-                snek.move('L');
-            } else if (key.equals(KeyCode.RIGHT)) {
-                snek.move('R');
-            } else if (key.equals(KeyCode.UP)) {
-                snek.move('U');
-            } else if (key.equals(KeyCode.DOWN)) {
-                snek.move('D');
-            }
+        KeyCode previous = steering.heading();
+        KeyCode direction = steering.advance();
+        if (previous != direction) {
+            gameView.recordTurn(snek.getHead(), previous, direction);
+        }
+        snek.move(switch (direction) {
+            case UP -> 'U';
+            case DOWN -> 'D';
+            case LEFT -> 'L';
+            case RIGHT -> 'R';
+            default -> throw new IllegalStateException("Expected an arrow direction");
+        });
 
-            if (!snek.getDead() && snek.ateCoin(coin)) {
-                powerCoin();
-                game.incScore();
-                if (game.gameWon()) {
-                    gameView.drawGrid(coin, snek, obstacle, gameView.gc, false, 0);
-                    return;
-                }
+        if (!snek.getDead() && snek.ateCoin(coin)) {
+            powerCoin();
+            game.incScore();
+            if (!game.gameWon()) {
                 newCoin();
             }
-
-            keyPressed = false;
-
-            if (!snek.getDead() || snek.hitSelf()) {
-                gameView.drawGrid(coin, snek, obstacle, gameView.gc, false, 0);
-            }
-
-            gameView.gameWon();
-            gameView.gameOver(snek);
-            gameView.updateScoreLabel();
         }
-    }));
+
+        refreshView();
+        if (hasEnded()) {
+            stop();
+        }
+    }
 
     public void handle(KeyEvent event) {
-        if (event.getCode().isArrowKey()) animation.play();
-
-        if (DirectionValidator.canTurn(key, event.getCode()) && !keyPressed) {
-            lastKey = key;
-            key = event.getCode();
-            keyPressed = true;
-            gameView.turnDir(snek);
+        KeyCode code = event.getCode();
+        if (code.isArrowKey()) {
+            if (!hasEnded()) {
+                steering.requestTurn(code);
+                animation.play();
+            }
+            event.consume();
+            return;
         }
 
-        if (event.getCode().equals(KeyCode.P)) {
-            animation.stop();
+        if (code == KeyCode.P) {
+            if (animation.getStatus() == Animation.Status.RUNNING) {
+                animation.pause();
+            } else if (animation.getStatus() == Animation.Status.PAUSED) {
+                animation.play();
+            }
         }
 
-        if (event.getCode().equals(KeyCode.TAB)) {
+        if (code == KeyCode.TAB) {
             reset();
-            gameView.scoreLabel.setText("Score: " + game.getScorePoints());
+            event.consume();
         }
 
-        if (event.getCode().equals(KeyCode.PLUS)) {
+        if (code == KeyCode.PLUS) {
             gameView.scaleToFullscreen(true, stage, obstacle, snek, coin);
             gameView.gameOverLabel.setStyle("-fx-font-size: 50;");
             gameView.gameWonLabel.setStyle("-fx-font-size: 50;");
             gameView.scoreLabel.setStyle("-fx-font-size: 35;");
         }
 
-        if (event.getCode().equals(KeyCode.MINUS)) {
+        if (code == KeyCode.MINUS) {
             gameView.scaleToFullscreen(false, stage, obstacle, snek, coin);
             gameView.gameOverLabel.setStyle("-fx-font-size: 15;");
             gameView.gameWonLabel.setStyle("-fx-font-size: 15;");
             gameView.scoreLabel.setStyle("-fx-font-size: 15;");
         }
 
-        if (event.getCode().equals(KeyCode.ESCAPE)) {
-            MainMenuController mainMenuController = new MainMenuController();
-            mainMenuController.getViewManager().getPrimaryStage().show();
-            mainMenuController.getViewManager().getGameStage().close();
+        if (code == KeyCode.ESCAPE) {
+            stop();
+            returnToMenu.run();
+            event.consume();
         }
     }
 
-    private void reset() {
-
-        animation.jumpTo(Duration.ZERO);
+    /** Stops updates when gameplay ends or the game window closes. */
+    public void stop() {
         animation.stop();
+    }
 
+    private boolean hasEnded() {
+        return snek.getDead() || game.gameWon();
+    }
+
+    private void reset() {
+        stop();
+        obstacle.reset();
+        game.resetScore();
+        steering.reset();
+        gameView.clearTurns();
         snek = new Snake(game.getWidth(), game.getHeight(), game.isNoBorder(), obstacle);
         coin = new Coin(game.getWidth(), game.getHeight(), snek, obstacle);
-
         animation.setRate(game.getSpeed());
-        key = KeyCode.LEFT;
-        keyPressed = false;
-        game.resetScore();
-        obstacle.reset();
+        refreshView();
+    }
 
+    private void refreshView() {
+        gameView.drawGrid(coin, snek, obstacle);
         gameView.gameWon();
         gameView.gameOver(snek);
         gameView.updateScoreLabel();
-
-        gameView.drawGrid(coin, snek, obstacle, gameView.gc, false, 0);
     }
 
     private void powerCoin() {
@@ -142,7 +151,7 @@ public class GameController {
         } else if (coin.getClass().equals(SilverCoin.class)){
             Random rnd = new Random();
             obstacle.newObstacles(snek, coin, rnd.nextInt(game.getWidth() * game.getHeight()/ 20) +3);
-            game.decMaxScore(obstacle.getObstacles().size());
+            game.setObstacleCount(obstacle.getObstacles().size());
         } else if (coin.getClass().equals(BlueCoin.class)) {
             snek.ignoreBorders(true);
         }
