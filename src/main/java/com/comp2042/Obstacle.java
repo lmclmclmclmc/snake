@@ -7,10 +7,11 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class Obstacle {
-    private Color color = Color.BLACK;
-    private ArrayList<Point> obstacles = new ArrayList<>();
-    private int x;
-    private int y;
+    private static final int MAX_OBSTACLES = 50;
+    private final Color color = Color.BLACK;
+    private final ArrayList<Point> obstacles = new ArrayList<>();
+    private final int x;
+    private final int y;
 
     public Obstacle(int x, int y) {
        this.x = x;
@@ -18,17 +19,30 @@ public class Obstacle {
     }
 
     public void newObstacles(Snake snek, Coin coin, int amount) {
-        if (obstacles.size() > 50) {
+        if (amount <= 0 || obstacles.size() >= MAX_OBSTACLES) {
             return;
         }
         Random rnd = new Random();
-        Point p;
-        for (int i=0; i<amount; i++) {
-            do {
-                p = new Point(rnd.nextInt(x) + 1, rnd.nextInt(y));
-            } while (coin.getPos().equals(p) || snek.getBody().contains(p) || snek.getHead().equals(p));
-            obstacles.add(p);
+        int targetSize = Math.min(MAX_OBSTACLES, obstacles.size() + amount);
+        int remainingAttempts = x * y * 2;
+
+        while (obstacles.size() < targetSize && remainingAttempts-- > 0) {
+            Point candidate = randomPoint(rnd, x, y);
+            boolean occupied = coin.getPos().equals(candidate)
+                    || snek.getBody().contains(candidate)
+                    || snek.getHead().equals(candidate)
+                    || obstacles.contains(candidate);
+            if (!occupied) {
+                obstacles.add(candidate);
+            }
         }
+    }
+
+    static Point randomPoint(Random random, int width, int height) {
+        if (width <= 0 || height <= 0) {
+            throw new IllegalArgumentException("Board dimensions must be positive");
+        }
+        return new Point(random.nextInt(width), random.nextInt(height));
     }
 
     public Color getColor() {
