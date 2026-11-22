@@ -2,20 +2,33 @@ package com.comp2042;
 
 import javafx.scene.paint.Color;
 
-import java.awt.*;
+import java.awt.Point;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class Obstacle {
     private static final int MAX_OBSTACLES = 50;
     private final Color color = Color.BLACK;
     private final ArrayList<Point> obstacles = new ArrayList<>();
+    private final List<Level.Wall> startingWalls;
     private final int x;
     private final int y;
 
     public Obstacle(int x, int y) {
-       this.x = x;
-       this.y = y;
+        this(x, y, List.of());
+    }
+
+    /** Creates the obstacle field for the selected level. */
+    public Obstacle(Level level) {
+        this(level.width(), level.height(), level.walls());
+    }
+
+    private Obstacle(int x, int y, List<Level.Wall> startingWalls) {
+        this.x = x;
+        this.y = y;
+        this.startingWalls = startingWalls;
+        reset();
     }
 
     public void newObstacles(Snake snek, Coin coin, int amount) {
@@ -55,5 +68,8 @@ public class Obstacle {
 
     public void reset() {
         obstacles.clear();
+        for (Level.Wall wall : startingWalls) {
+            obstacles.add(new Point(wall.x(), wall.y()));
+        }
     }
 }

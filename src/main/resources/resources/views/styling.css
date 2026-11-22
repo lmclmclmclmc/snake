@@ -47,6 +47,10 @@
     -fx-font-size: 35;
 }
 
+.levelLabel, .choice-box > .label, .choice-box .menu-item > .label {
+    -fx-font-size: 16;
+}
+
 #title {
     -fx-font-family: "SF Pixelate Shaded", bold;
     -fx-font-size: 40;

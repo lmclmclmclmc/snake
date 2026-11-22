@@ -1,35 +1,51 @@
 package com.comp2042;
 
+import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
 public class MainMenuController {
 
-    private static final int X_VALUE = 20;
-    private static final int Y_VALUE = 20;
-    private static final boolean POWER_UP = true;
-    private static final char DIFFICULTY = 'N';
+    @FXML
+    private ChoiceBox<Level> levelChoice;
+    @FXML
+    private Label levelDescription;
 
     private Scene gameScene;
 
     private final ViewManager viewManager = Main.getViewManager();
 
+    @FXML
+    private void initialize() {
+        levelChoice.getItems().setAll(Level.values());
+        levelChoice.valueProperty().addListener((observable, previous, selected) ->
+                levelDescription.setText(selected == null ? "" : selected.description()));
+        levelChoice.setValue(Level.CLASSIC);
+    }
+
     public void handleStart() {
+        Level level = levelChoice.getValue();
+        if (level == null) {
+            return;
+        }
         viewManager.initGameStage();
 
         Stage gameStage = viewManager.getGameStage();
-        launchSnake(gameStage);
+        gameStage.setTitle("Snake Game | " + level);
+        launchSnake(gameStage, level);
         gameStage.setScene(gameScene);
         gameStage.show();
         viewManager.getPrimaryStage().hide();
     }
 
-    private void launchSnake(Stage gameStage) {
-        Game game = new Game(X_VALUE, Y_VALUE, POWER_UP, DIFFICULTY);
-        Obstacle obstacle = new Obstacle(game.getWidth(), game.getHeight());
+    private void launchSnake(Stage gameStage, Level level) {
+        Game game = new Game(level);
+        Obstacle obstacle = new Obstacle(level);
         Snake snek = new Snake(game.getWidth(), game.getHeight(), game.isNoBorder(), obstacle);
         Coin coin = new Coin(game.getWidth(), game.getHeight(), snek, obstacle);
 

@@ -57,11 +57,12 @@ public class GameView {
         gameWonLabel.getStylesheets().add(css);
         gameWonLabel.setVisible(false);
 
-        scoreLabel = new Label("Score: " + game.getScorePoints());
+        scoreLabel = new Label();
         scoreLabel.setId("scoreLabel");
         scoreLabel.getStylesheets().add(css);
         scoreLabel.setFont(new Font("Arial", 20));
         scoreLabel.setVisible(true);
+        updateScoreLabel();
     }
 
     public void scaleToFullscreen(boolean fullScreen, Stage primaryStage, Obstacle obstacle, Snake snek, Coin coin) {
@@ -198,7 +199,8 @@ public class GameView {
     }
 
     public void updateScoreLabel() {
-        scoreLabel.setText("Score: " + game.getScorePoints());
+        scoreLabel.setText("Score: " + game.getScorePoints() + "   Coins: "
+                + game.getCollectedCoins() + "/" + game.getCoinTarget());
     }
 
 }

@@ -4,37 +4,43 @@ import javafx.scene.paint.Color;
 
 public class Game {
     private Color color = Color.web("feffe4");
-    private int width;
-    private int height;
+    private final int width;
+    private final int height;
     private int score;
     private int maxScore;
-    private double multiplier;
+    private final int coinGoal;
+    private final int startingObstacleCount;
+    private final double multiplier;
     private int scorePoints;
-    private double speed;
-    private boolean powerUp;
-    private boolean noBorder;
+    private final double speed;
+    private final boolean powerUp;
+    private final boolean noBorder;
 
     public Game(int x, int y, boolean powerUp, char difficulty) {
-        if (difficulty == 'E') {
-            speed = 8.5;
-            noBorder = true;
-        } else if (difficulty == 'N') {
-            speed = 8.5;
-            noBorder = false;
-        } else if (difficulty == 'H') {
-            speed = 13;
-            noBorder = false;
-        }
+        this(x, y, powerUp, difficulty == 'E', switch (difficulty) {
+            case 'E', 'N' -> 8.5;
+            case 'H' -> 13;
+            default -> 0;
+        }, Integer.MAX_VALUE, 0);
+    }
+
+    /** Creates a game with the selected level's dimensions, speed and coin objective. */
+    public Game(Level level) {
+        this(level.width(), level.height(), true, false, level.speed(), level.coinGoal(),
+                level.walls().size());
+    }
+
+    private Game(int width, int height, boolean powerUp, boolean noBorder, double speed,
+                 int coinGoal, int startingObstacleCount) {
+        this.width = width;
+        this.height = height;
         this.powerUp = powerUp;
-        width = x;
-        height = y;
-        maxScore = x * y - 2;
-        this.powerUp = powerUp;
-        if (height > 50) {
-            multiplier = 10;
-        } else {
-            multiplier = 20;
-        }
+        this.noBorder = noBorder;
+        this.speed = speed;
+        this.coinGoal = coinGoal;
+        this.startingObstacleCount = startingObstacleCount;
+        multiplier = height > 50 ? 10 : 20;
+        setObstacleCount(startingObstacleCount);
     }
 
     public boolean gameWon() {
@@ -46,12 +52,12 @@ public class Game {
     }
 
     /**
-     * Sets the number of coins needed to fill the board with the current obstacles.
+     * Caps the level's coin objective at the capacity of the current board.
      *
      * @param count number of cells occupied by obstacles
      */
     public void setObstacleCount(int count) {
-        maxScore = width * height - 2 - count;
+        maxScore = Math.min(coinGoal, width * height - 2 - count);
     }
 
     public int getWidth() {
@@ -65,7 +71,7 @@ public class Game {
     public void resetScore() {
         score = 0;
         scorePoints = 0;
-        setObstacleCount(0);
+        setObstacleCount(startingObstacleCount);
     }
 
     public Color getColor() {
@@ -82,6 +88,16 @@ public class Game {
 
     public int getScorePoints() {
         return scorePoints;
+    }
+
+    /** Returns the coins collected in the current game. */
+    public int getCollectedCoins() {
+        return score;
+    }
+
+    /** Returns the current coin target for winning. */
+    public int getCoinTarget() {
+        return maxScore;
     }
 
     public boolean isPowerUp() {
