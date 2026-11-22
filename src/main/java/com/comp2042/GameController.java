@@ -9,6 +9,7 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import java.util.Random;
+import java.util.function.IntConsumer;
 
 public class GameController {
     private Snake snek;
@@ -18,13 +19,14 @@ public class GameController {
     private final Stage stage;
     private final Obstacle obstacle;
     private final Runnable returnToMenu;
+    private final IntConsumer recordScore;
     private final CoinFactory coinFactory = new CoinFactory();
     private final Steering steering = new Steering();
     private final Timeline animation = new Timeline(
             new KeyFrame(Duration.seconds(1), event -> tick()));
 
     public GameController(Snake snek, Coin coin, Game game, GameView gameView,
-                          Obstacle obstacle, Stage stage, Runnable returnToMenu) {
+                          Obstacle obstacle, Stage stage, Runnable returnToMenu, IntConsumer recordScore) {
         this.snek = snek;
         this.coin = coin;
         this.gameView = gameView;
@@ -32,13 +34,14 @@ public class GameController {
         this.stage = stage;
         this.obstacle = obstacle;
         this.returnToMenu = returnToMenu;
+        this.recordScore = recordScore;
         animation.setCycleCount(Animation.INDEFINITE);
         animation.setRate(game.getSpeed());
     }
 
     private void tick() {
         if (hasEnded()) {
-            stop();
+            finishRun();
             return;
         }
 
@@ -65,7 +68,7 @@ public class GameController {
 
         refreshView();
         if (hasEnded()) {
-            stop();
+            finishRun();
         }
     }
 
@@ -108,15 +111,16 @@ public class GameController {
         }
 
         if (code == KeyCode.ESCAPE) {
-            stop();
+            finishRun();
             returnToMenu.run();
             event.consume();
         }
     }
 
-    /** Stops updates when gameplay ends or the game window closes. */
-    public void stop() {
+    /** Stops the clock and records the score before switching away from the run. */
+    public void finishRun() {
         animation.stop();
+        recordScore.accept(game.getScorePoints());
     }
 
     private boolean hasEnded() {
@@ -124,7 +128,7 @@ public class GameController {
     }
 
     private void reset() {
-        stop();
+        finishRun();
         obstacle.reset();
         game.resetScore();
         steering.reset();

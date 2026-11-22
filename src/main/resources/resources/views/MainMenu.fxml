@@ -15,6 +15,7 @@
         <ChoiceBox fx:id="levelChoice" layoutX="210.0" layoutY="160.0" prefHeight="36.0" prefWidth="175.0" />
         <Label layoutX="153.0" layoutY="168.0" labelFor="$levelChoice" styleClass="levelLabel" text="Level" />
         <Label fx:id="levelDescription" alignment="CENTER" layoutY="204.0" prefHeight="42.0" styleClass="levelLabel" textAlignment="CENTER" wrapText="true" AnchorPane.leftAnchor="45.0" AnchorPane.rightAnchor="45.0" />
-        <Button fx:id="btn_start" layoutY="264.0" minHeight="40.0" minWidth="115.0" mnemonicParsing="false" onAction="#handleStart" prefHeight="40.0" prefWidth="115.0" styleClass="startAndQuitBtn" text="Start" textFill="WHITE" AnchorPane.leftAnchor="217.5" />
+        <Label fx:id="levelBestScore" alignment="CENTER" layoutY="248.0" prefHeight="26.0" styleClass="levelLabel" AnchorPane.leftAnchor="45.0" AnchorPane.rightAnchor="45.0" />
+        <Button fx:id="btn_start" layoutY="288.0" minHeight="40.0" minWidth="115.0" mnemonicParsing="false" onAction="#handleStart" prefHeight="40.0" prefWidth="115.0" styleClass="startAndQuitBtn" text="Start" textFill="WHITE" AnchorPane.leftAnchor="217.5" />
     </children>
 </AnchorPane>

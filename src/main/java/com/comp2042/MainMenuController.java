@@ -9,23 +9,34 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
+import java.nio.file.Path;
+
 public class MainMenuController {
 
     @FXML
     private ChoiceBox<Level> levelChoice;
     @FXML
     private Label levelDescription;
+    @FXML
+    private Label levelBestScore;
 
     private Scene gameScene;
 
     private final ViewManager viewManager = Main.getViewManager();
+    private final HighScores scores = new HighScores(
+            Path.of(System.getProperty("user.home"), ".comp2042-snake", "scores.properties"));
 
     @FXML
     private void initialize() {
         levelChoice.getItems().setAll(Level.values());
         levelChoice.valueProperty().addListener((observable, previous, selected) ->
-                levelDescription.setText(selected == null ? "" : selected.description()));
+                updateLevelDetails(selected));
         levelChoice.setValue(Level.CLASSIC);
+    }
+
+    private void updateLevelDetails(Level selected) {
+        levelDescription.setText(selected == null ? "" : selected.description());
+        levelBestScore.setText(selected == null ? "" : "Personal best: " + scores.best(selected));
     }
 
     public void handleStart() {
@@ -49,12 +60,13 @@ public class MainMenuController {
         Snake snek = new Snake(game.getWidth(), game.getHeight(), game.isNoBorder(), obstacle);
         Coin coin = new Coin(game.getWidth(), game.getHeight(), snek, obstacle);
 
-        GameView gameView = new GameView(game);
+        GameView gameView = new GameView(game, scores.best(level));
         GameController controller = new GameController(snek, coin, game, gameView, obstacle, gameStage, () -> {
+            updateLevelDetails(levelChoice.getValue());
             viewManager.getPrimaryStage().show();
             gameStage.close();
-        });
-        gameStage.setOnHidden(event -> controller.stop());
+        }, points -> scores.record(level, points));
+        gameStage.setOnHidden(event -> controller.finishRun());
 
         StackPane gamePane = new StackPane();
         gameScene = new Scene(gamePane, game.getWidth() * game.getMultiplier(), game.getHeight() * game.getMultiplier());

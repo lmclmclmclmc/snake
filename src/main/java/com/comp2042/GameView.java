@@ -25,6 +25,7 @@ public class GameView {
     public Label scoreLabel;
     private boolean gameOverVis = false;
     private boolean gameWonVis = false;
+    private int bestScore;
 
     private final Game game;
     private double initX;
@@ -33,8 +34,9 @@ public class GameView {
     private boolean fullsize = false;
     private final int[][] turnArray;
 
-    public GameView(Game game) {
+    public GameView(Game game, int bestScore) {
         this.game = game;
+        this.bestScore = bestScore;
         this.turnArray = new int[game.getWidth()][game.getHeight()];
     }
 
@@ -199,8 +201,10 @@ public class GameView {
     }
 
     public void updateScoreLabel() {
-        scoreLabel.setText("Score: " + game.getScorePoints() + "   Coins: "
-                + game.getCollectedCoins() + "/" + game.getCoinTarget());
+        int score = game.getScorePoints();
+        bestScore = Math.max(bestScore, score);
+        scoreLabel.setText("Score " + score + "  Best " + bestScore + "  "
+                + game.getCollectedCoins() + "/" + game.getCoinTarget() + " coins");
     }
 
 }
