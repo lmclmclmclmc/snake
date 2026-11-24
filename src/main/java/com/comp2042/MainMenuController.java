@@ -4,6 +4,7 @@ import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
@@ -19,6 +20,8 @@ public class MainMenuController {
     private Label levelDescription;
     @FXML
     private Label levelBestScore;
+    @FXML
+    private CheckBox adaptiveSpeed;
 
     private Scene gameScene;
 
@@ -47,15 +50,16 @@ public class MainMenuController {
         viewManager.initGameStage();
 
         Stage gameStage = viewManager.getGameStage();
-        gameStage.setTitle("Snake Game | " + level);
-        launchSnake(gameStage, level);
+        boolean adaptive = adaptiveSpeed.isSelected();
+        gameStage.setTitle("Snake Game | " + level + (adaptive ? " | Adaptive speed" : ""));
+        launchSnake(gameStage, level, adaptive);
         gameStage.setScene(gameScene);
         gameStage.show();
         viewManager.getPrimaryStage().hide();
     }
 
-    private void launchSnake(Stage gameStage, Level level) {
-        Game game = new Game(level);
+    private void launchSnake(Stage gameStage, Level level, boolean adaptive) {
+        Game game = new Game(level, adaptive);
         Obstacle obstacle = new Obstacle(level);
         Snake snek = new Snake(game.getWidth(), game.getHeight(), game.isNoBorder(), obstacle);
         Coin coin = new Coin(game.getWidth(), game.getHeight(), snek, obstacle);

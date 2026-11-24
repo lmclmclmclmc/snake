@@ -58,8 +58,8 @@ class LevelTest {
         assertEquals(398, classic.getCoinTarget());
         assertEquals(10, orchard.getCoinTarget());
         assertEquals(14, maze.getCoinTarget());
-        assertTrue(orchard.getSpeed() < classic.getSpeed());
-        assertTrue(classic.getSpeed() < maze.getSpeed());
+        assertTrue(orchard.tickRate(0) < classic.tickRate(0));
+        assertTrue(classic.tickRate(0) < maze.tickRate(0));
 
         for (int i = 0; i < 9; i++) {
             orchard.incScore();

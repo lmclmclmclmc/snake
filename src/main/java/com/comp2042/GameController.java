@@ -36,7 +36,7 @@ public class GameController {
         this.returnToMenu = returnToMenu;
         this.recordScore = recordScore;
         animation.setCycleCount(Animation.INDEFINITE);
-        animation.setRate(game.getSpeed());
+        animation.setRate(game.tickRate(0));
     }
 
     private void tick() {
@@ -59,8 +59,7 @@ public class GameController {
         });
 
         if (!snek.getDead() && snek.ateCoin(coin)) {
-            powerCoin();
-            game.incScore();
+            collectCoin();
             if (!game.gameWon()) {
                 newCoin();
             }
@@ -135,7 +134,7 @@ public class GameController {
         gameView.clearTurns();
         snek = new Snake(game.getWidth(), game.getHeight(), game.isNoBorder(), obstacle);
         coin = new Coin(game.getWidth(), game.getHeight(), snek, obstacle);
-        animation.setRate(game.getSpeed());
+        animation.setRate(game.tickRate(0));
         refreshView();
     }
 
@@ -146,20 +145,17 @@ public class GameController {
         gameView.updateScoreLabel();
     }
 
-    private void powerCoin() {
-        animation.setRate(game.getSpeed());
-        snek.ignoreBorders(false);
-        if (coin.getClass().equals(RainbowCoin.class)) {
-            RainbowCoin tempCoin = (RainbowCoin) coin;
-            animation.setRate(game.getSpeed() + tempCoin.getSpeedBonus());
-        } else if (coin.getClass().equals(SilverCoin.class)){
-            Random rnd = new Random();
-            obstacle.newObstacles(snek, coin, rnd.nextInt(game.getWidth() * game.getHeight()/ 20) +3);
+    private void collectCoin() {
+        snek.ignoreBorders(coin instanceof BlueCoin);
+        if (coin instanceof SilverCoin) {
+            int obstacleCount = new Random().nextInt(game.getWidth() * game.getHeight() / 20) + 3;
+            obstacle.newObstacles(snek, coin, obstacleCount);
             game.setObstacleCount(obstacle.getObstacles().size());
-        } else if (coin.getClass().equals(BlueCoin.class)) {
-            snek.ignoreBorders(true);
         }
         game.addPoints(coin.getPoints());
+        game.incScore();
+        double coinBoost = coin instanceof RainbowCoin rainbow ? rainbow.getSpeedBonus() : 0;
+        animation.setRate(game.tickRate(coinBoost));
     }
 
     private void newCoin() {

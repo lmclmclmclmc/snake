@@ -12,31 +12,41 @@ public class Game {
     private final int startingObstacleCount;
     private final double multiplier;
     private int scorePoints;
-    private final double speed;
+    private final GamePace pace;
     private final boolean powerUp;
     private final boolean noBorder;
 
     public Game(int x, int y, boolean powerUp, char difficulty) {
-        this(x, y, powerUp, difficulty == 'E', switch (difficulty) {
+        this(x, y, powerUp, difficulty == 'E', new GamePace(switch (difficulty) {
             case 'E', 'N' -> 8.5;
             case 'H' -> 13;
             default -> 0;
-        }, Integer.MAX_VALUE, 0);
+        }, false), Integer.MAX_VALUE, 0);
     }
 
     /** Creates a game with the selected level's dimensions, speed and coin objective. */
     public Game(Level level) {
-        this(level.width(), level.height(), true, false, level.speed(), level.coinGoal(),
+        this(level, false);
+    }
+
+    /**
+     * Creates a game with the selected level and movement pace option.
+     *
+     * @param level selected board and coin objective
+     * @param adaptiveSpeed whether the pace increases as coins are collected
+     */
+    public Game(Level level, boolean adaptiveSpeed) {
+        this(level.width(), level.height(), true, false, new GamePace(level.speed(), adaptiveSpeed), level.coinGoal(),
                 level.walls().size());
     }
 
-    private Game(int width, int height, boolean powerUp, boolean noBorder, double speed,
+    private Game(int width, int height, boolean powerUp, boolean noBorder, GamePace pace,
                  int coinGoal, int startingObstacleCount) {
         this.width = width;
         this.height = height;
         this.powerUp = powerUp;
         this.noBorder = noBorder;
-        this.speed = speed;
+        this.pace = pace;
         this.coinGoal = coinGoal;
         this.startingObstacleCount = startingObstacleCount;
         multiplier = height > 50 ? 10 : 20;
@@ -104,8 +114,14 @@ public class Game {
         return powerUp;
     }
 
-    public double getSpeed() {
-        return speed;
+    /**
+     * Calculates the current movement rate from the run's coin count.
+     *
+     * @param coinBoost temporary extra speed from a collected coin, or zero
+     * @return current moves per second
+     */
+    public double tickRate(double coinBoost) {
+        return pace.rateAt(score, coinBoost);
     }
 
     public boolean isNoBorder() {
