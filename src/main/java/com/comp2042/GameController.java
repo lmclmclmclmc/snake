@@ -1,5 +1,6 @@
 package com.comp2042;
 
+import com.comp2042.SnakeMovement.Direction;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -50,15 +51,15 @@ public class GameController {
         if (previous != direction) {
             gameView.recordTurn(snek.getHead(), previous, direction);
         }
-        snek.move(switch (direction) {
-            case UP -> 'U';
-            case DOWN -> 'D';
-            case LEFT -> 'L';
-            case RIGHT -> 'R';
+        Direction movement = switch (direction) {
+            case UP -> Direction.UP;
+            case DOWN -> Direction.DOWN;
+            case LEFT -> Direction.LEFT;
+            case RIGHT -> Direction.RIGHT;
             default -> throw new IllegalStateException("Expected an arrow direction");
-        });
+        };
 
-        if (!snek.getDead() && snek.ateCoin(coin)) {
+        if (snek.advance(movement, coin)) {
             collectCoin();
             if (!game.gameWon()) {
                 newCoin();

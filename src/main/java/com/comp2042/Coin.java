@@ -18,7 +18,7 @@ public class Coin {
             tx = rnd.nextInt(x);
             ty = rnd.nextInt(y);
             pos = new Point(tx, ty);
-        } while (snek.getHead().equals(pos) || snek.getBody().contains(pos) || obstacle.getObstacles().contains(pos));
+        } while (snek.occupies(pos) || obstacle.getObstacles().contains(pos));
     }
 
     public Point getPos() {

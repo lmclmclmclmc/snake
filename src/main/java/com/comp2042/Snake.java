@@ -2,141 +2,46 @@ package com.comp2042;
 
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.paint.Color;
 
-import java.awt.*;
-import java.util.ArrayList;
+import java.awt.Point;
+import java.util.List;
 
+/** Connects the snake's movement state to obstacles and its JavaFX sprites. */
 public class Snake {
-    private Color headColor = Color.web("2eb872");
-    private Color bodyColor = Color.web("a3de83");
-    private boolean dead = false;
-    private final Point head = new Point();
-    private final ArrayList<Point> body = new ArrayList<>();
-    private final int gx;
-    private final int gy;
-    private boolean ignoreBorders = false;
-    private boolean noBorder;
-    private Obstacle obstacle;
-    private Image imgInputHead = new Image("resources/views/res/snakehead.png");
-    private ImageView imageHead = new ImageView(imgInputHead);
-    private Image imgInputBody = new Image("resources/views/res/snakebody.png");
-    private ImageView imageBody = new ImageView(imgInputBody);
-    private Image imgInputTurn = new Image("resources/views/res/snaketurnleft.png");
-    private ImageView imageTurn = new ImageView(imgInputTurn);
-    private Image imgInputTail = new Image("resources/views/res/snaketail.png");
-    private ImageView imageTail = new ImageView(imgInputTail);
-    private int snakeDir = 270;
+    private final SnakeMovement movement;
+    private final Obstacle obstacle;
+    private final ImageView imageHead = new ImageView(new Image("resources/views/res/snakehead.png"));
+    private final ImageView imageBody = new ImageView(new Image("resources/views/res/snakebody.png"));
+    private final ImageView imageTurn = new ImageView(new Image("resources/views/res/snaketurnleft.png"));
+    private final ImageView imageTail = new ImageView(new Image("resources/views/res/snaketail.png"));
 
-    public Snake(int x, int y, boolean noBorder, Obstacle obstacle) {
+    public Snake(int width, int height, boolean noBorder, Obstacle obstacle) {
         this.obstacle = obstacle;
-        this.noBorder = noBorder;
-        this.head.setLocation(x / 2, y / 2);
-        this.body.add(new Point(x / 2 + 1, y / 2));
-        this.gx = x;
-        this.gy = y;
+        this.movement = new SnakeMovement(width, height, noBorder);
     }
 
-    public void move(char dir) {
-        body.add(new Point(head));
-        switch (dir) {
-            case 'U':
-                snakeDir = 0;
-                head.translate(0, -1);
-                if (borderControl() && (!ignoreBorders && !noBorder) || obstacle.getObstacles().contains(head)) {
-                    head.translate(0, 1);
-                    dead = true;
-                } else if (borderControl() && (ignoreBorders || noBorder)) {
-                    head.setLocation(head.getX(), gy - 1);
-                }
-                break;
-
-            case 'D':
-                snakeDir = 180;
-                head.translate(0, 1);
-                if (borderControl() && (!ignoreBorders && !noBorder) || obstacle.getObstacles().contains(head)) {
-                    head.translate(0, -1);
-                    dead = true;
-                } else if (borderControl() && (ignoreBorders || noBorder)) {
-                    head.setLocation(head.getX(), 0);
-                }
-                break;
-
-            case 'L':
-                snakeDir = 270;
-                head.translate(-1, 0);
-                if (borderControl() && (!ignoreBorders && !noBorder) || obstacle.getObstacles().contains(head)) {
-                    head.translate(1, 0);
-                    dead = true;
-                } else if (borderControl() && (ignoreBorders || noBorder)) {
-                    head.setLocation(gx - 1, head.getY());
-                }
-                break;
-
-            case 'R':
-                snakeDir = 90;
-                head.translate(1, 0);
-                if (borderControl() && (!ignoreBorders && !noBorder) || obstacle.getObstacles().contains(head)) {
-                    head.translate(-1, 0);
-                    dead = true;
-                } else if (borderControl() && (ignoreBorders || noBorder)) {
-                    head.setLocation(0, head.getY());
-                }
-                break;
-        }
-
-        if (body.size() > 4 && hitSelf() && !body.get(0).equals(head)) {
-            dead = true;
-        }
+    boolean advance(SnakeMovement.Direction direction, Coin coin) {
+        return movement.advance(direction, coin.getPos(), obstacle.getObstacles());
     }
 
-    public int getBodyDir(int bodyCount) {
-        if (bodyCount == 0) {
-            return 0;
-        } else if (body.get(bodyCount).getY() == body.get(bodyCount - 1).getY()) {
-            return 270;
-        } else {
-            return 0;
-        }
+    boolean occupies(Point cell) {
+        return movement.occupies(cell);
     }
 
-    public boolean ateCoin(Coin coin) {
-        if (!head.equals(coin.getPos())) {
-            body.remove(0);
-        }
-        return head.equals(coin.getPos());
-    }
-
-    private boolean borderControl() {
-        return head.getX() < 0 || head.getY() < 0 || head.getX() >= gx || head.getY() >= gy;
-    }
-
-    public boolean hitSelf() {
-        return body.contains(head);
-    }
-
-    public ArrayList<Point> getBody() {
-        return new ArrayList<>(body);
+    public List<Point> getBody() {
+        return movement.body();
     }
 
     public Point getHead() {
-        return new Point(head);
-    }
-
-    public Color getHeadColor() {
-        return headColor;
-    }
-
-    public Color getBodyColor() {
-        return bodyColor;
+        return movement.head();
     }
 
     public boolean getDead() {
-        return dead;
+        return movement.isDead();
     }
 
-    public void ignoreBorders(boolean ign) {
-        ignoreBorders = ign;
+    public void ignoreBorders(boolean active) {
+        movement.setWrapPowerUp(active);
     }
 
     public ImageView getImageViewHead() {
@@ -152,7 +57,7 @@ public class Snake {
     }
 
     public int getSnakeDir() {
-        return snakeDir;
+        return movement.rotation();
     }
 
     public ImageView getImageViewTail() {

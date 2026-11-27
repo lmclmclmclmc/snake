@@ -42,8 +42,7 @@ public class Obstacle {
         while (obstacles.size() < targetSize && remainingAttempts-- > 0) {
             Point candidate = randomPoint(rnd, x, y);
             boolean occupied = coin.getPos().equals(candidate)
-                    || snek.getBody().contains(candidate)
-                    || snek.getHead().equals(candidate)
+                    || snek.occupies(candidate)
                     || obstacles.contains(candidate);
             if (!occupied) {
                 obstacles.add(candidate);

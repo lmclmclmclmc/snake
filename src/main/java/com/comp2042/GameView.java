@@ -6,6 +6,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -14,6 +15,7 @@ import javafx.stage.Stage;
 
 import java.awt.Point;
 import java.util.Arrays;
+import java.util.List;
 
 public class GameView {
 
@@ -100,12 +102,12 @@ public class GameView {
 
         gc.drawImage(coin.getImage(), (coin.getPos().x * game.getMultiplier()) * fullScale, (coin.getPos().y * game.getMultiplier()) * fullScale, game.getMultiplier() * fullScale - 3 * fullScale, game.getMultiplier() * fullScale - 3 * fullScale);
 
-        int bodyIndex = 0;
-        for (Point point : snek.getBody()) {
-            drawBody(snek, point, bodyIndex);
-            bodyIndex++;
+        List<Point> body = snek.getBody();
+        for (int index = 0; index < body.size(); index++) {
+            drawBody(snek, body, index);
         }
-
+        Point tail = body.get(0);
+        turnArray[tail.x][tail.y] = 0;
         drawHead(snek);
 
         gc.setFill(obstacle.getColor());
@@ -115,52 +117,39 @@ public class GameView {
     }
 
     private void drawHead(Snake snek) {
-        snek.getImageViewHead().setRotate(snek.getSnakeDir());
-        SnapshotParameters params = new SnapshotParameters();
-        params.setFill(Color.TRANSPARENT);
-        Image rotatedImage = snek.getImageViewHead().snapshot(params, null);
-        gc.drawImage(rotatedImage, (snek.getHead().x * game.getMultiplier()) * fullScale, (snek.getHead().y * game.getMultiplier()) * fullScale, game.getMultiplier() * fullScale * fullScale, game.getMultiplier() * fullScale * fullScale);
+        drawSprite(snek.getImageViewHead(), snek.getHead(), snek.getSnakeDir());
     }
 
-    private void drawBody(Snake snek, Point point, int index) {
-        Image rotatedImage;
-        if (snek.getBody().size() <= 1) {
-            snek.getImageViewTail().setRotate(snek.getSnakeDir());
-            SnapshotParameters params = new SnapshotParameters();
-            params.setFill(Color.TRANSPARENT);
-            rotatedImage = snek.getImageViewTail().snapshot(params, null);
+    private void drawBody(Snake snek, List<Point> body, int index) {
+        Point point = body.get(index);
+        int turn = turnArray[point.x][point.y];
+        if (body.size() == 1) {
+            drawSprite(snek.getImageViewTail(), point, snek.getSnakeDir());
         } else if (index == 0) {
-            int rotateTail;
-            if (snek.getBody().get(1).getX() == snek.getBody().get(0).getX() && snek.getBody().get(1).getY() == snek.getBody().get(0).getY() - 1) {
-                rotateTail = 0;
-            } else if (snek.getBody().get(1).getX() == snek.getBody().get(0).getX() && snek.getBody().get(1).getY() == snek.getBody().get(0).getY() + 1) {
-                rotateTail = 180;
-            } else if (snek.getBody().get(1).getX() == snek.getBody().get(0).getX() - 1 && snek.getBody().get(1).getY() == snek.getBody().get(0).getY()) {
-                rotateTail = 270;
-            } else {
-                rotateTail = 90;
-            }
-            snek.getImageViewTail().setRotate(rotateTail);
-            SnapshotParameters params = new SnapshotParameters();
-            params.setFill(Color.TRANSPARENT);
-            rotatedImage = snek.getImageViewTail().snapshot(params, null);
-        } else if (index > 0 && (turnArray[(int) snek.getBody().get(index).getX()][(int) snek.getBody().get(index).getY()] != 0)) {
-            snek.getImageViewTurn().setRotate(90 * turnArray[(int) snek.getBody().get(index).getX()][(int) snek.getBody().get(index).getY()]);
-            SnapshotParameters params = new SnapshotParameters();
-            params.setFill(Color.TRANSPARENT);
-            rotatedImage = snek.getImageViewTurn().snapshot(params, null);
+            drawSprite(snek.getImageViewTail(), point, tailRotation(point, body.get(1)));
+        } else if (turn != 0) {
+            drawSprite(snek.getImageViewTurn(), point, 90 * turn);
         } else {
-            snek.getImageViewBody().setRotate(snek.getBodyDir(index));
-            SnapshotParameters params = new SnapshotParameters();
-            params.setFill(Color.TRANSPARENT);
-            rotatedImage = snek.getImageViewBody().snapshot(params, null);
+            int rotation = point.y == body.get(index - 1).y ? 270 : 0;
+            drawSprite(snek.getImageViewBody(), point, rotation);
         }
+    }
 
-        if (turnArray[(int) snek.getBody().get(0).getX()][(int) snek.getBody().get(0).getY()] != 0) {
-            turnArray[(int) snek.getBody().get(0).getX()][(int) snek.getBody().get(0).getY()] = 0;
+    private int tailRotation(Point tail, Point adjacent) {
+        if (tail.x == adjacent.x) {
+            return Math.floorMod(adjacent.y - tail.y, game.getHeight()) == 1 ? 180 : 0;
         }
+        return Math.floorMod(adjacent.x - tail.x, game.getWidth()) == 1 ? 90 : 270;
+    }
 
-        gc.drawImage(rotatedImage, (point.x * game.getMultiplier()) * fullScale, (point.y * game.getMultiplier()) * fullScale, game.getMultiplier() * fullScale * fullScale, game.getMultiplier() * fullScale * fullScale);
+    private void drawSprite(ImageView sprite, Point point, int rotation) {
+        sprite.setRotate(rotation);
+        SnapshotParameters params = new SnapshotParameters();
+        params.setFill(Color.TRANSPARENT);
+        Image rotatedImage = sprite.snapshot(params, null);
+        double cellSize = game.getMultiplier() * fullScale;
+        double spriteSize = cellSize * fullScale;
+        gc.drawImage(rotatedImage, point.x * cellSize, point.y * cellSize, spriteSize, spriteSize);
     }
 
     public void recordTurn(Point head, KeyCode previous, KeyCode direction) {
